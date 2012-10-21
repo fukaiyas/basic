@@ -121,7 +121,7 @@ class BasicView extends Application{
         	keyFrames = KeyFrame(0.01 s, "main loop", execute)
             def execute {
 	            lines.lift(runtime.currentLine).getOrElse(Line.end).execute(runtime)
-	            runtime.next
+	            runtime.next()
 	            if(runtime.terminated){
 	                println("terminated")
 	                stop

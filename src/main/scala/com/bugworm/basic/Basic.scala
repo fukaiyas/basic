@@ -8,16 +8,16 @@ import com.bugworm.basic.screen.ScreenIO
 
 object Basic extends RegexParsers{
 
-    def main(args : Array[String]){
-        val reader = new InputStreamReader(new FileInputStream("Sample.basic"), "UTF-8")
-        val lines = parse(reader).get
-        reader.close()
-        val runtime = new BasicRuntime(lines)
-        while(!runtime.terminated){
-            lines.lift(runtime.currentLine).getOrElse(Line.end).execute(runtime)
-            runtime.next
-        }
-    }
+//    def main(args : Array[String]){
+//        val reader = new InputStreamReader(new FileInputStream("Sample.basic"), "UTF-8")
+//        val lines = parse(reader).get
+//        reader.close()
+//        val runtime = new BasicRuntime(lines)
+//        while(!runtime.terminated){
+//            lines.lift(runtime.currentLine).getOrElse(Line.end).execute(runtime)
+//            runtime.next()
+//        }
+//    }
 
     def parse(data : String) = {
     	parseAll(lines, data)
@@ -29,9 +29,18 @@ object Basic extends RegexParsers{
 
     def lines : Parser[List[Line]] = rep(line)
 
-    def line : Parser[Line] = operation ^^ (new Line(_)) |
-            label~operation ^^ {case lab~ope => new Line(ope, lab)} |
+    def line : Parser[Line] = operations ^^ (new Line(_)) |
+            label~operations ^^ {case lab~ope => new Line(ope, lab)} |
             label ^^ (new Line(Operation.nop, _))
+
+    def operations : Parser[Operation] = operation~rep(":"~>operation) ^^ {
+        case ope~multi => new Operation{
+            def execute(runtime : BasicRuntime){
+                ope.execute(runtime)
+                for(mope <- multi if runtime.nextLine == -1 && !runtime.terminated)mope.execute(runtime)
+            }
+        }
+    }
 
     def operation : Parser[Operation] =
         numvar~"="~numexpr ^^ {
@@ -66,7 +75,7 @@ object Basic extends RegexParsers{
         "(?i)END".r ^^^ new Operation{
             def execute(runtime : BasicRuntime) = runtime.terminated = true
         } |
-        "(?i)IF".r~>boolexpr~"(?i)THEN".r~operation~opt("(?i)ELSE".r~operation) ^^ {
+        "(?i)IF".r~>boolexpr~"(?i)THEN".r~operations~opt("(?i)ELSE".r~operations) ^^ {
             case b~then~ope1~option => new Operation{
                 def execute(runtime : BasicRuntime) = {
                     if(b(runtime)){
@@ -258,7 +267,7 @@ class BasicRuntime(lines : List[Line]){
     var currentLine : Int = 0
     var nextLine : Int = -1
 
-    def next = {
+    def next() = {
         currentLine = if(nextLine == -1) currentLine + 1 else nextLine
         nextLine = -1
     }
