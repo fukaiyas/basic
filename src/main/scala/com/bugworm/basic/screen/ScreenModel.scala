@@ -19,33 +19,34 @@ case class ScreenModel{
         st.foreach{
             c =>
         	text(cursorX.value)(cursorY.value).value = c.toString
-        	addX(1)
+        	addX()
         }
     }
 
     def newLine(){
         //TODO ここでもしかして改行コードをいれとくのかも?
-        addY(1)
+        addY()
         cursorX.value = 0
     }
 
-    def addX(v : Int){
-    	cursorX.value = cursorX.value + v
+    def addX(){
+    	cursorX.value = cursorX.value + 1
 	    while(cursorX.value >= width){
-    	    addY(1)
+    	    addY()
     	    cursorX.value = cursorX.value - width
     	}
     }
 
-    def addY(v : Int){
-        cursorY.value = cursorY.value + v
+    def addY(){
+        cursorY.value = cursorY.value + 1
         if(cursorY.value >= height){
-            val sh = cursorY.value - height + 1
-    		for(x <- 0 until 40; y <- 0 until 25 - sh){
-    		    text(x)(y).value = text(x)(y + sh).value
-    		    text(x)(y + sh).value = ""
+    		for(x <- 0 until 40; y <- 0 until 24){
+    		    if(text(x)(y).value != text(x)(y + 1).value){
+    		    	text(x)(y).value = text(x)(y + 1).value
+    		    }
     		    //TODO 色が入ったら色情報も必要
     		}
+            for(x <- 0 until 40)text(x)(24).value = " "
             cursorY.value = height - 1
         }
     }

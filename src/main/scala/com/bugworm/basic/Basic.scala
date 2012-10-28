@@ -43,6 +43,7 @@ object Basic extends RegexParsers{
     }
 
     def operation : Parser[Operation] =
+        "((?i)REM|').*".r ^^^ Operation.nop |
         numvar~"="~numexpr ^^ {
             case va~c~ex => new Operation{
                 def execute(runtime : BasicRuntime) = runtime.decimalVars.put(va.name, ex(runtime))
@@ -71,6 +72,12 @@ object Basic extends RegexParsers{
             case x~c~y => new Operation{
                 def execute(runtime : BasicRuntime) = runtime.io.locate(x(runtime), y(runtime))
             }
+        } |
+        "(?i)CYCLE".r~>numexpr ^^ (n => new Operation{
+            def execute(runtime : BasicRuntime) = runtime.cycle(n(runtime))
+        }) |
+        "(?i)SYNC".r ^^^ new Operation{
+            def execute(runtime : BasicRuntime) = runtime.sync = true
         } |
         "(?i)END".r ^^^ new Operation{
             def execute(runtime : BasicRuntime) = runtime.terminated = true
@@ -151,7 +158,12 @@ object Basic extends RegexParsers{
     def numfn : Parser[Function[BigDecimal]] =
         "(?i)STICK\\(".r~>numexpr<~"\\)".r ^^ (n => new Function[BigDecimal]{
             def apply(runtime : BasicRuntime) = runtime.io.stick(n(runtime))
-        })
+        }) |
+        "(?i)RND".r ^^^ {
+            new Function[BigDecimal]{
+                def apply(runtime : BasicRuntime) = BigDecimal(Math.random)
+            }
+        }
 
     def numvar : Parser[Var[BigDecimal]] = "[A-Za-z][A-Za-z0-9_]*".r ^^ (new Var[BigDecimal](_){
         def apply(runtime : BasicRuntime) = runtime.decimalVars.getOrElse(name, BigDecimal(0));
@@ -256,13 +268,14 @@ class Const[T](val v : T)extends Value[T]{
     def apply(runtime : BasicRuntime) = v
 }
 
-class BasicRuntime(lines : List[Line]){
+class BasicRuntime(val lines : List[Line]){
 
     val strVars : HashMap[String, String] = new HashMap[String, String]
     val decimalVars : HashMap[String, BigDecimal] = new HashMap[String, BigDecimal]
     val booleanVars : HashMap[String, Boolean] = new HashMap[String, Boolean]
     val lineMap : HashMap[String, Int] = new HashMap[String, Int]
     var io : BasicIO = new ConsoleIO
+    var sync : Boolean = false
     var terminated : Boolean = false
     var currentLine : Int = 0
     var nextLine : Int = -1
@@ -285,5 +298,9 @@ class BasicRuntime(lines : List[Line]){
 
     def input(ex : Var[String]){
         strVars.put(ex.name, io.input)
+    }
+
+    def cycle(n : BigDecimal){
+        io.cycle(n, this)
     }
 }

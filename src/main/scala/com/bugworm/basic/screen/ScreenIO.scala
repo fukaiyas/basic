@@ -6,10 +6,13 @@ import javafx.scene.input.KeyCode
 import scalafx.beans.property.PropertyIncludes._
 import scalafx.event.EventHandler
 import scalafx.scene.input.KeyEvent
+import com.bugworm.basic.BasicRuntime
 
 class ScreenIO(val model : ScreenModel) extends BasicIO{
 
     val keys = Array(false, false, false, false)
+
+    var loop : Option[Loop] = None
 
     def printStr(st : String, ln : Boolean){
 
@@ -23,7 +26,7 @@ class ScreenIO(val model : ScreenModel) extends BasicIO{
         throw new UnsupportedOperationException
     }
 
-    def color(f : BigDecimal, b : BigDecimal = BigDecimal.valueOf(0)){
+    def color(f : BigDecimal){
         //TODO
     }
 
@@ -65,5 +68,12 @@ class ScreenIO(val model : ScreenModel) extends BasicIO{
 
     def keyTyped(event : KeyEvent) {
         //TODO
+    }
+
+    def cycle(n : BigDecimal, runtime : BasicRuntime){
+
+        loop.foreach(_.stop)
+        loop = Option(new Loop(n.doubleValue(), runtime))
+        loop.get.play()
     }
 }

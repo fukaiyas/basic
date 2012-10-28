@@ -112,22 +112,30 @@ class BasicView extends Application{
 
     def startButton {
         val reader = new InputStreamReader(new FileInputStream("Sample2.basic"), "UTF-8")
-        val lines = Basic.parse(reader).get
-        val runtime = new BasicRuntime(lines)
+        val runtime = new BasicRuntime(Basic.parse(reader).get)
         runtime.io = sio
         reader.close()
-        new Timeline{
-        	cycleCount = Timeline.INDEFINITE
-        	keyFrames = KeyFrame(0.01 s, "main loop", execute)
-            def execute {
-	            lines.lift(runtime.currentLine).getOrElse(Line.end).execute(runtime)
-	            runtime.next()
-	            if(runtime.terminated){
-	                println("terminated")
-	                stop
-	            }
-            }
-        }.play
+        runtime.cycle(BigDecimal.valueOf(50))
         button.disable = true
+    }
+}
+
+class Loop(val frame : Double, val runtime : BasicRuntime) extends Timeline {
+
+    cycleCount = Timeline.INDEFINITE
+    keyFrames = KeyFrame(frame ms, "main loop [" + frame + "ms]", execute)
+    def execute {
+        runtime.sync = false
+        var i = 0
+        while(!runtime.sync && i < 100){
+	        runtime.lines.lift(runtime.currentLine).getOrElse(Line.end).execute(runtime)
+	        runtime.next()
+	        if(runtime.terminated){
+	            runtime.sync = true
+	            println("terminated")
+	            stop
+	        }
+	        i += 1
+        }
     }
 }
