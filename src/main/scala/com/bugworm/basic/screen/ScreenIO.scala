@@ -7,10 +7,12 @@ import scalafx.beans.property.PropertyIncludes._
 import scalafx.event.EventHandler
 import scalafx.scene.input.KeyEvent
 import com.bugworm.basic.BasicRuntime
+import sun.security.krb5.internal.crypto.KeyUsage
 
 class ScreenIO(val model : ScreenModel) extends BasicIO{
 
     val keys = Array(false, false, false, false)
+    val keysupdate = keys.clone
 
     var loop : Option[Loop] = None
 
@@ -41,7 +43,9 @@ class ScreenIO(val model : ScreenModel) extends BasicIO{
 
     def stick(n : BigDecimal) : BigDecimal = {
         //TODO nは本当はデバイスの指定に使いたい
-        keys match {
+        val m = new Array[Boolean](4)
+        for(i <- 0 until m.length)m(i) = keys(i) | keysupdate(i)
+        m match {
             case Array(true, false, false, false) => BigDecimal(1)
             case Array(true, false, false, true) => BigDecimal(2)
             case Array(false, false, false, true) => BigDecimal(3)
@@ -54,20 +58,9 @@ class ScreenIO(val model : ScreenModel) extends BasicIO{
         }
     }
 
-    def keyControl(event : KeyEvent) {
+    def screen(x : BigDecimal, y : BigDecimal) : String = {
 
-        val press = event.eventType == KeyEvent.KeyPressed
-        event.code match{
-	        case KeyCode.UP => keys(0) = press
-	        case KeyCode.DOWN => keys(1) = press
-	        case KeyCode.LEFT => keys(2) = press
-	        case KeyCode.RIGHT => keys(3) = press
-	        case _ =>
-        }
-    }
-
-    def keyTyped(event : KeyEvent) {
-        //TODO
+        model.text(x.intValue)(y.intValue).value
     }
 
     def cycle(n : BigDecimal, runtime : BasicRuntime){
@@ -75,5 +68,47 @@ class ScreenIO(val model : ScreenModel) extends BasicIO{
         loop.foreach(_.stop)
         loop = Option(new Loop(n.doubleValue(), runtime))
         loop.get.play()
+    }
+ 
+    def flush(){
+        for(i <- 0 until keysupdate.length)keysupdate(i) = false
+    }
+
+    def keyPressed(event : KeyEvent) {
+
+        event.code match{
+	        case KeyCode.UP =>
+	            keys(0) = true
+	            keysupdate(0) = true
+	        case KeyCode.DOWN =>
+	            keys(1) = true
+	            keysupdate(1) = true
+	        case KeyCode.LEFT =>
+	            keys(2) = true
+	            keysupdate(2) = true
+	        case KeyCode.RIGHT =>
+	            keys(3) = true
+	            keysupdate(3) = true
+	        case _ =>
+        }
+    }
+
+    def keyReleased(event : KeyEvent){
+
+        event.code match{
+	        case KeyCode.UP =>
+	            keys(0) = false
+	        case KeyCode.DOWN =>
+	            keys(1) = false
+	        case KeyCode.LEFT =>
+	            keys(2) = false
+	        case KeyCode.RIGHT =>
+	            keys(3) = false
+	        case _ =>
+        }
+    }
+
+    def keyTyped(event : KeyEvent) {
+        //TODO
     }
 }

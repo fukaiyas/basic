@@ -57,10 +57,10 @@ class BasicView extends Application{
         }
         val scene = new Scene {
 	        onKeyPressed = {
-	            event : KeyEvent => sio.keyControl(event)
+	            event : KeyEvent => sio.keyPressed(event)
 	        }
 	        onKeyReleased = {
-	            event : KeyEvent => sio.keyControl(event)
+	            event : KeyEvent => sio.keyReleased(event)
 	        }
 	        onKeyTyped = {
 	            event : KeyEvent => sio.keyTyped(event)
@@ -122,9 +122,13 @@ class BasicView extends Application{
 
 class Loop(val frame : Double, val runtime : BasicRuntime) extends Timeline {
 
+    var lastnano : Long = System.nanoTime
     cycleCount = Timeline.INDEFINITE
     keyFrames = KeyFrame(frame ms, "main loop [" + frame + "ms]", execute)
     def execute {
+        val t = System.nanoTime
+        println((lastnano - t) / 1000);
+        lastnano = t
         runtime.sync = false
         var i = 0
         while(!runtime.sync && i < 100){
@@ -137,5 +141,6 @@ class Loop(val frame : Double, val runtime : BasicRuntime) extends Timeline {
 	        }
 	        i += 1
         }
+        runtime.io.flush()
     }
 }

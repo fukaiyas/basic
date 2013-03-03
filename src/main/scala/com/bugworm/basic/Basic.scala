@@ -114,7 +114,14 @@ object Basic extends RegexParsers{
     def strfn : Parser[Function[String]] =
         "(?i)STR\\$\\(".r~>numexpr<~"\\)".r ^^ (n => new Function[String]{
             def apply(runtime : BasicRuntime) = n(runtime).toString
-        })
+        }) |
+        "(?i)SCREEN\\$\\(".r~>numexpr~","~numexpr<~"\\)".r ^^ {
+            case x~c~y => new Function[String]{
+                def apply(runtime : BasicRuntime) : String = {
+                    runtime.io.screen(x(runtime), y(runtime))
+                }
+            }
+        }
 
     def strvar : Parser[Var[String]] = "[A-Za-z][A-Za-z0-9_]*\\$".r ^^ (new Var[String](_){
         def apply(runtime : BasicRuntime) = runtime.strVars.getOrElse(name, "");
@@ -209,7 +216,7 @@ object Basic extends RegexParsers{
 	            }
 	        }
     	} |
-    	strexpr~"=|==|<>|><|!=".r~strexpr ^^ {
+    	strexpr~"==|<>|><|!=|=".r~strexpr ^^ {
     	    case str1~cp~str2 => new Function[Boolean]{
     	        def apply(runtime : BasicRuntime) = {
     	            cp match {

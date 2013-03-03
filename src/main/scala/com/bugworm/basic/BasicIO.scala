@@ -9,8 +9,10 @@ trait BasicIO {
 
     def inkey : String
     def stick(n : BigDecimal) : BigDecimal
+    def screen(x : BigDecimal, y : BigDecimal) : String
 
     def cycle(n : BigDecimal, runtime : BasicRuntime) : Unit
+    def flush() : Unit
 }
 
 class ConsoleIO extends BasicIO{
@@ -42,5 +44,11 @@ class ConsoleIO extends BasicIO{
         throw new UnsupportedOperationException
     }
 
+    def screen(x : BigDecimal, y : BigDecimal) : String = {
+        throw new UnsupportedOperationException
+    }
+
     def cycle(n : BigDecimal, runtime : BasicRuntime){}
+
+    def flush(){}
 }
